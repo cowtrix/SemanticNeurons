@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MachineLearning2
+namespace SemanticTensors
 {
 	public class ByteProgram : IEnumerable<byte>
 	{
@@ -19,6 +19,24 @@ namespace MachineLearning2
 		public ByteProgram(IEnumerable<byte> bytes)
 		{
 			m_array = bytes.ToArray();
+		}
+
+		public IEnumerable<InstructionSet> GetInstructionSet()
+		{
+			var instructions = m_array;
+			for (int i = 0; i < instructions.Length; i++)
+			{
+				var op = instructions[i];
+				if(!Enum.IsDefined(typeof(InstructionSet), op) || op == (byte)InstructionSet.NULL)
+				{
+					continue;
+				}
+				yield return (InstructionSet)op;
+				if (op >= (byte)InstructionSet.REG_1 && op <= (byte)InstructionSet.REG_4)
+				{
+					i += sizeof(int);
+				}
+			}
 		}
 
 		public float Calculate(float input)

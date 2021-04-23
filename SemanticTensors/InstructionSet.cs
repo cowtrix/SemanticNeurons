@@ -1,4 +1,4 @@
-﻿namespace MachineLearning2
+﻿namespace SemanticTensors
 {
 	public enum InstructionSet : byte
 	{

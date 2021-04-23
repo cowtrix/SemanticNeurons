@@ -6,8 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CUDAfy.NET" Version="1.29.5576.13786" />
-    <PackageReference Include="MathFloat" Version="1.0.1" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\lib\MathFloat\MathFloat\MathFloat.csproj" />
   </ItemGroup>
 
 </Project>

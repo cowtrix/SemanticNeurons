@@ -1,11 +1,18 @@
 ﻿using System;
 using System.Linq;
 
-namespace MachineLearning2
+namespace SemanticTensors
 {
 	public class ByteProgramMutatorV1 : IByteProgramMutator
 	{
-		private readonly static InstructionSet[] InstructionSetLookup = (InstructionSet[])Enum.GetValues(typeof(InstructionSet));
+		public static WeightedSet<InstructionSet> GenerationWeights;
+		private readonly static InstructionSet[] InstructionSetLookup;
+
+		static ByteProgramMutatorV1()
+		{
+			InstructionSetLookup = (InstructionSet[])Enum.GetValues(typeof(InstructionSet));
+			GenerationWeights = new WeightedSet<InstructionSet>(InstructionSetLookup);
+		}
 
 		public int MutationCount;
 
@@ -20,7 +27,8 @@ namespace MachineLearning2
 			// Mutate some n values
 			for (var i = 0; i < MutationCount; ++i)
 			{
-				var randomBit = (byte)rnd.Next(0, InstructionSetLookup.Length - 1);
+				var randomBit = (byte)GenerationWeights.GetRandom(rnd);
+				//var randomBit = (byte)rnd.Next(0, InstructionSetLookup.Length - 1);
 				var randomIndex = rnd.Next(0, program.Length - 1);
 				if (randomBit >= (byte)InstructionSet.REG_1 && randomBit <= (byte)InstructionSet.REG_4)
 				{
@@ -37,6 +45,14 @@ namespace MachineLearning2
 					program[randomIndex + 4] = rFl.ElementAt(3);
 				}
 				program[randomIndex] = randomBit;
+			}
+		}
+
+		public void AdjustWeights(params (InstructionSet, int)[] wDelta)
+		{
+			foreach (var adjustment in wDelta)
+			{
+				GenerationWeights.AddWeight(adjustment.Item1, Math.Max(0, adjustment.Item2));
 			}
 		}
 	}

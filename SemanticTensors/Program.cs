@@ -2,13 +2,16 @@
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 
-namespace MachineLearning2
+namespace SemanticTensors
 {
 	public interface IByteProgramMutator
 	{
 		public void Mutate(ByteProgram pr);
+		public void AdjustWeights(params ValueTuple<InstructionSet, int>[] wDelta);
 	}
 
 	public class Program
@@ -18,9 +21,9 @@ namespace MachineLearning2
 
 		static void Main(string[] args)
 		{
-			var path = "output.tsv";
-			File.Delete(path);
-			var str = File.AppendText(path);
+			var size = 200;
+			using Bitmap b = new Bitmap(size, size) ;
+			using Graphics g = Graphics.FromImage(b);
 			var trainer = new ByteProgramTrainer();
 			for (var x = -100; x < 100; ++x)
 			{
@@ -31,12 +34,31 @@ namespace MachineLearning2
 						{ x, y },
 					};
 					var bestProgram = trainer.TrainForValues(new ByteProgram(ProgramLength), values, out var generations);
-					var errorSum = ByteProgramTrainer.ErrorSum(bestProgram, values);
-					var tsv = $"{x}\t{y}\t{generations}\t{errorSum}\t{bestProgram.PrintInstructionSet()}";
-					str.WriteLine(tsv);
+
+					var bound = ByteProgramTrainer.ErrorBound(values);
+					var rawSum = ByteProgramTrainer.ErrorSum(bestProgram, values);
+					var errorSum = MathF.Min(1, rawSum / (bound / 100));
+					if(float.IsNaN(errorSum))
+					{
+						errorSum = 0;
+					}
+
+					b.SetPixel(x + 100, y + 100, Color.FromArgb((int)(errorSum * 255), (int)((generations / 100f) * 255), 0, 255));
+
+					var tsv = $"{x}\t{y}\t{generations}\t{rawSum}";
+					//str.WriteLine(tsv);
 					Console.WriteLine(tsv);
 				}
 			}
+
+			b.Save(@"output.png", ImageFormat.Png);
+
+			var fs = File.AppendText("instructionsProbs.tsv");
+			foreach(var w in ByteProgramMutatorV1.GenerationWeights.Weights)
+			{
+				fs.WriteLine($"{w.Key.ToString()}\t{w.Value}");
+			}
+
 			/*
 			Console.WriteLine(bestProgram.PrintInstructionSet());
 			foreach (var kvp in values)

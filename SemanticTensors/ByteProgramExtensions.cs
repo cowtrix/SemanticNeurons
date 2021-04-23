@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace MachineLearning2
+namespace SemanticTensors
 {
 	public static class ByteProgramExtensions
 	{

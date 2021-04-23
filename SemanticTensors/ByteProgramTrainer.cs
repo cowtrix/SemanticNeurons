@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MachineLearning2
+namespace SemanticTensors
 {
 	public class ByteProgramTrainer
 	{
@@ -33,6 +33,7 @@ namespace MachineLearning2
 				}
 
 				error = ErrorSum(newProgram, desiredValues);
+				ByteProgramMutatorV1.GenerationWeights.Normalize();
 				//Console.WriteLine(ProgramReadable(program));
 				//Console.WriteLine($"Gen: {generationCount}\tError: {error}");
 
@@ -50,6 +51,7 @@ namespace MachineLearning2
 			IByteProgramMutator mutator = new ByteProgramMutatorV1(10);
 
 			ByteProgram bestProgram = null;
+			var minErrorLastGen = bestError;
 			var minErrorThisGen = bestError;
 			for (var i = 0; i < popCount; ++i)
 			{
@@ -58,9 +60,24 @@ namespace MachineLearning2
 					var program = baseProgram.Clone();  // Create new instance of program to mutate
 					mutator.Mutate(program);
 					var error = ErrorSum(program, desiredValues);
+					if(float.IsInfinity(error) || float.IsNaN(error))
+					{
+						error = int.MaxValue;
+					}
 
+					var errorReductionFactor = (int)((error / minErrorLastGen) * 10f);     // How big is this error compared to the previous generation?
+					if(errorReductionFactor > 10)
+					{
+						errorReductionFactor = 10;
+					}
+					if(errorReductionFactor < 0)
+					{
+						errorReductionFactor = 0;
+					}
 					lock (lockObj)
 					{
+						var weightAdustments = program.GetInstructionSet().Select(s => (s, errorReductionFactor)).ToArray();
+						mutator.AdjustWeights(weightAdustments);
 						if (error < minErrorThisGen)
 						{
 							bestProgram = program;
