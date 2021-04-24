@@ -20,7 +20,7 @@ namespace SemanticTensors
 			m_weightSum = (long)values.Count();
 		}
 
-		public void Normalize()
+		public void Normalize(uint resolution = 1024)
 		{
 			var min = Weights.Min(x => x.Value);
 			var max = Weights.Max(x => x.Value);
@@ -29,8 +29,9 @@ namespace SemanticTensors
 			{
 				foreach(var w in Weights.Keys.ToList())
 				{
-					var norm = (Weights[w] - min) / (max - min);
-					Weights[w] = Math.Max(1, norm);
+					var norm = (Weights[w] - min) / (float)(max - min);
+					norm *= resolution;
+					Weights[w] = Math.Max(1, (uint)norm);
 				}
 				m_weightSum = Weights.Sum(x => x.Value);
 			}

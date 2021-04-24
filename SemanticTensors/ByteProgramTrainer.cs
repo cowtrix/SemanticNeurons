@@ -13,6 +13,8 @@ namespace SemanticTensors
 		public static float ErrorSum(ByteProgram prog, IDictionary<float, float> desiredValues) =>
 			desiredValues.Sum(d => Math.Abs(prog.Calculate(d.Key) - d.Value));
 
+		private Stack<ByteProgram> m_evolutionHistory = new Stack<ByteProgram>();
+
 		public ByteProgram TrainForValues(ByteProgram program, IDictionary<float, float> desiredValues, out int generationCount)
 		{
 			if (program == null)
@@ -22,21 +24,19 @@ namespace SemanticTensors
 			generationCount = 0;
 			var bestError = ErrorBound(desiredValues) * 100;
 			var targetError = ErrorBound(desiredValues) / 100;
-			var error = ErrorSum(program, desiredValues); ;
+			var error = ErrorSum(program, desiredValues);
 			while (generationCount < MaximumGenerationLimit && error > targetError)
 			{
 				generationCount++;
 				var newProgram = CreateMutatedGeneration(generationCount, program, desiredValues, ref bestError, 1000);
 				if (newProgram == null)
 				{
+					program = m_evolutionHistory.Pop();
 					continue;
 				}
-
 				error = ErrorSum(newProgram, desiredValues);
 				ByteProgramMutatorV1.GenerationWeights.Normalize();
-				//Console.WriteLine(ProgramReadable(program));
-				//Console.WriteLine($"Gen: {generationCount}\tError: {error}");
-
+				m_evolutionHistory.Push(program);
 				program = newProgram.Clone();
 			}
 			return program;
