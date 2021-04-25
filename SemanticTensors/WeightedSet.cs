@@ -20,7 +20,7 @@ namespace SemanticTensors
 			m_weightSum = (long)values.Count();
 		}
 
-		public void Normalize(uint resolution = 1024)
+		public void Normalize(uint resolution = 100)
 		{
 			var min = Weights.Min(x => x.Value);
 			var max = Weights.Max(x => x.Value);

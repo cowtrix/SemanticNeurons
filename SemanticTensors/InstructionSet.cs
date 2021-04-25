@@ -33,5 +33,10 @@
 		COPY_VAL_REG_2 = 22,         // COPY_VAL_ the value in registry 2 to the input
 		COPY_VAL_REG_3 = 23,         // COPY_VAL_ the value in registry 3 to the input
 		COPY_VAL_REG_4 = 24,         // COPY_VAL_ the value in registry 4 to the input
+
+		MUL_REG_1 = 25,          // MUL_ the value in registry 1 to the input
+		MUL_REG_2 = 26,         // MUL_ the value in registry 2 to the input
+		MUL_REG_3 = 27,         // MUL_ the value in registry 3 to the input
+		MUL_REG_4 = 28,         // MUL_ the value in registry 4 to the input
 	}
 }

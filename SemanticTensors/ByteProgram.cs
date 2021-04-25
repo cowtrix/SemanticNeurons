@@ -103,6 +103,14 @@ namespace SemanticTensors
 						regIndex = ((int)op) - (int)InstructionSet.COPY_VAL_REG_1;
 						reg[regIndex] = (int)input;
 						break;
+
+					case InstructionSet.MUL_REG_1:
+					case InstructionSet.MUL_REG_2:
+					case InstructionSet.MUL_REG_3:
+					case InstructionSet.MUL_REG_4:      // Copy the current value to the register
+						regIndex = ((int)op) - (int)InstructionSet.MUL_REG_1;
+						input *= reg[regIndex];
+						break;
 				}
 			}
 			return input;

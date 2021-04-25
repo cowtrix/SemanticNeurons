@@ -7,13 +7,24 @@ namespace SemanticTensors
 {
 	public class ByteProgramTrainer
 	{
-		const int MaximumGenerationLimit = 100;
+		public int MaximumGenerationLimit { get; set; }
+		public int PerGenerationMutationCount { get; set; }
 		public static float ErrorBound(IDictionary<float, float> desiredValues) =>
 			desiredValues.Sum(d => Math.Abs(d.Key - d.Value));
 		public static float ErrorSum(ByteProgram prog, IDictionary<float, float> desiredValues) =>
 			desiredValues.Sum(d => Math.Abs(prog.Calculate(d.Key) - d.Value));
 
-		private Stack<ByteProgram> m_evolutionHistory = new Stack<ByteProgram>();
+		public static float ErrorAvg(ByteProgram prog, IDictionary<float, float> desiredValues) =>
+			desiredValues.Average(d => Math.Abs(prog.Calculate(d.Key) - d.Value));
+
+		public ByteProgramTrainer(int genLimit = 100, int genMutationCount = 64 * 64)
+		{
+			MaximumGenerationLimit = genLimit;
+			PerGenerationMutationCount = genMutationCount;
+		}
+
+		private const int EVOLUTION_HISTORY_CACHE_LIMIT = 64 * 64 * 64;
+		private LinkedList<ByteProgram> m_evolutionHistory = new LinkedList<ByteProgram>();
 
 		public ByteProgram TrainForValues(ByteProgram program, IDictionary<float, float> desiredValues, out int generationCount)
 		{
@@ -28,15 +39,28 @@ namespace SemanticTensors
 			while (generationCount < MaximumGenerationLimit && error > targetError)
 			{
 				generationCount++;
-				var newProgram = CreateMutatedGeneration(generationCount, program, desiredValues, ref bestError, 1000);
+				var newProgram = CreateMutatedGeneration(generationCount, program, desiredValues, ref bestError, PerGenerationMutationCount);
 				if (newProgram == null)
 				{
-					program = m_evolutionHistory.Pop();
+					if(m_evolutionHistory.Any())
+					{
+						//Console.WriteLine($"Not luck - going back!");
+						program = m_evolutionHistory.Last.Value;
+						m_evolutionHistory.RemoveLast();
+					}
+					else
+					{
+						bestError *= bestError; // We loosen the search criteria to explore deeper within the tree
+					}
 					continue;
 				}
 				error = ErrorSum(newProgram, desiredValues);
 				ByteProgramMutatorV1.GenerationWeights.Normalize();
-				m_evolutionHistory.Push(program);
+				m_evolutionHistory.AddLast(program);
+				while(m_evolutionHistory.Count > EVOLUTION_HISTORY_CACHE_LIMIT)
+				{
+					m_evolutionHistory.RemoveFirst();
+				}
 				program = newProgram.Clone();
 			}
 			return program;
@@ -46,19 +70,26 @@ namespace SemanticTensors
 		{
 			var t = new Task[popCount];
 			var rnd = new Random();
-
-			var lockObj = new Object();
-			IByteProgramMutator mutator = new ByteProgramMutatorV1(10);
-
+			var lockObj = new object();
+			IByteProgramMutator mutator = new ByteProgramMutatorV1();
+			var errorBound = ErrorBound(desiredValues);
 			ByteProgram bestProgram = null;
 			var minErrorLastGen = bestError;
 			var minErrorThisGen = bestError;
+			var mutationFactor = minErrorLastGen / errorBound;
+
+			// Check for the easiest win - no error
+			if(ErrorSum(baseProgram, desiredValues) == 0)
+			{
+				return baseProgram;
+			}
+
 			for (var i = 0; i < popCount; ++i)
 			{
 				t[i] = new Task(() =>
 				{
 					var program = baseProgram.Clone();  // Create new instance of program to mutate
-					mutator.Mutate(program);
+					mutator.Mutate(program, MathF.Min(1, mutationFactor));
 					var error = ErrorSum(program, desiredValues);
 					if(float.IsInfinity(error) || float.IsNaN(error))
 					{
@@ -74,10 +105,10 @@ namespace SemanticTensors
 					{
 						errorReductionFactor = 0;
 					}
+					var weightAdustments = program.GetInstructionSet().Select(s => (s, errorReductionFactor)).ToArray();
+					mutator.AdjustWeights(weightAdustments);
 					lock (lockObj)
 					{
-						var weightAdustments = program.GetInstructionSet().Select(s => (s, errorReductionFactor)).ToArray();
-						mutator.AdjustWeights(weightAdustments);
 						if (error < minErrorThisGen)
 						{
 							bestProgram = program;
@@ -89,6 +120,7 @@ namespace SemanticTensors
 			}
 			Task.WaitAll(t);
 			bestError = minErrorThisGen;
+			//Console.WriteLine($"Generation {genNumber}:\t\tError:{bestError}");
 			return bestProgram;
 		}
 	}

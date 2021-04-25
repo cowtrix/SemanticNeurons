@@ -14,16 +14,10 @@ namespace SemanticTensors
 			GenerationWeights = new WeightedSet<InstructionSet>(InstructionSetLookup);
 		}
 
-		public int MutationCount;
-
-		public ByteProgramMutatorV1(int mutationCount)
-		{
-			MutationCount = mutationCount;
-		}
-
-		public void Mutate(ByteProgram program)
+		public void Mutate(ByteProgram program, float normalizedError)
 		{
 			var rnd = new Random();
+			var MutationCount = normalizedError * program.Length;
 			// Mutate some n values
 			for (var i = 0; i < MutationCount; ++i)
 			{

@@ -5,12 +5,13 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Diagnostics;
 
 namespace SemanticTensors
 {
 	public interface IByteProgramMutator
 	{
-		public void Mutate(ByteProgram pr);
+		public void Mutate(ByteProgram pr, float normalizedError);
 		public void AdjustWeights(params ValueTuple<InstructionSet, int>[] wDelta);
 	}
 
@@ -21,50 +22,77 @@ namespace SemanticTensors
 
 		static void Main(string[] args)
 		{
+			var ticks = DateTime.Now.Ticks;
+			var logStr = File.AppendText($"GenerationHistory_{ticks}.tsv");
+
 			var size = 200;
 			using Bitmap b = new Bitmap(size, size) ;
 			using Graphics g = Graphics.FromImage(b);
-			var trainer = new ByteProgramTrainer();
-			for (var x = -100; x < 100; ++x)
+			var trainer = new ByteProgramTrainer(100);
+			var sw = Stopwatch.StartNew();
+			var results = new Dictionary<(int, int, int), ByteProgram>();
+			var rnd = new Random();
+
+			for(var i = -100; i < 100; i++)
 			{
-				for (var y = -100; y < 100; ++y)
+				for (var j = -100; j < 100; j++)
 				{
-					var values = new Dictionary<float, float>
+					var values = new Dictionary<float, float>();
+					var c = rnd.Next(-100, 100);
+					for (var x = -20; x < 20; x++)
 					{
-						{ x, y },
-					};
+						values.Add(x, i * x * x + j * x + c);
+					}
+
+					var sw2 = Stopwatch.StartNew();
 					var bestProgram = trainer.TrainForValues(new ByteProgram(ProgramLength), values, out var generations);
 
 					var bound = ByteProgramTrainer.ErrorBound(values);
 					var rawSum = ByteProgramTrainer.ErrorSum(bestProgram, values);
+					var avg = ByteProgramTrainer.ErrorAvg(bestProgram, values);
 					var errorSum = MathF.Min(1, rawSum / (bound / 100));
-					if(float.IsNaN(errorSum))
+
+					//Console.WriteLine(bestProgram.PrintInstructionSet());
+					/*foreach (var kvp in values)
 					{
-						errorSum = 0;
-					}
+						var str = $"IN: {kvp.Key}\tEXP: {kvp.Value}\tVAL: {bestProgram.Calculate(kvp.Key)}";
+						logStr.WriteLine(str);
+						Console.WriteLine(str);
+					}*/
 
-					b.SetPixel(x + 100, y + 100, Color.FromArgb((int)(errorSum * 255), (int)((generations / 100f) * 255), 0, 255));
+					var output = $"{i}x^2\t+ {j}x +\t{c}:\t\tGenerations: {generations}\tError Sum: {rawSum} ({errorSum.ToString("P")})\tError Avg: {avg}\tTime: {sw2.Elapsed}";
+					logStr.WriteLine(output);
+					Console.WriteLine(output);
 
-					var tsv = $"{x}\t{y}\t{generations}\t{rawSum}";
-					//str.WriteLine(tsv);
-					Console.WriteLine(tsv);
+					b.SetPixel(i + 100, j + 100, Color.FromArgb((int)(errorSum * 255), (int)((generations / 100f) * 255), 0, 255));
+					results.Add((i, j, c), bestProgram);
 				}
 			}
 
-			b.Save(@"output.png", ImageFormat.Png);
+			Console.WriteLine($"Generation took {sw.Elapsed}");
+			File.WriteAllText($"results_{ticks}.tsv", string.Join("\n", results.Select(kvp => $"{kvp.Key.Item1}\t{kvp.Key.Item2}\t{kvp.Key.Item3}\t{kvp.Value.PrintInstructionSet()}")));
 
+			//Console.WriteLine($"Finished after {sw.Elapsed} and {generations} generations. Error sum was {rawSum}.");
+
+			//b.SetPixel((x / 100) + 100, (y / 100) + 100, Color.FromArgb((int)(errorSum * 255), (int)((generations / 100f) * 255), 0, 255));
+
+			/*var tsv = $"{x}\t{y}\t{generations}\t{rawSum}";
+			logStr.WriteLine(tsv);
+			Console.WriteLine(tsv);
+
+			b.Save(@"output.png", ImageFormat.Png);
+			Console.WriteLine("Instruction Set Weights:");
 			var fs = File.AppendText("instructionsProbs.tsv");
 			foreach(var w in ByteProgramMutatorV1.GenerationWeights.Weights)
 			{
-				fs.WriteLine($"{w.Key.ToString()}\t{w.Value}");
-			}
-
-			/*
-			Console.WriteLine(bestProgram.PrintInstructionSet());
-			foreach (var kvp in values)
-			{
-				Console.WriteLine($"IN: {kvp.Key}\tEXP: {kvp.Value}\tVAL: {bestProgram.Calculate(kvp.Key)}");
+				var str = $"{w.Key}\t{w.Value}";
+				fs.WriteLine(str);
+				Console.WriteLine(str);
 			}*/
+
+			
+			
+			
 		}
 	}
 
