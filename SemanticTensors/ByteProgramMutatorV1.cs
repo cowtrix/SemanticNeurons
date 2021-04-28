@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace SemanticTensors
@@ -42,7 +43,7 @@ namespace SemanticTensors
 			}
 		}
 
-		public void AdjustWeights(params (InstructionSet, int)[] wDelta)
+		public void AdjustWeights(IEnumerable<ValueTuple<InstructionSet, int>> wDelta)
 		{
 			foreach (var adjustment in wDelta)
 			{
