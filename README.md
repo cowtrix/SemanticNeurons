@@ -1,5 +1,3 @@
-# Semantic Neurons
-
 An idea I've been having a lot of fun playing around with is this idea of little generative algorithms to build mapping functions. When we normally think about a neuron within a deep neural network, we think about this point within a hyperdimensional space. The dimensionality of this space is defined by the number of neurons in the next layer, and the position within that space is defined by the values of those weights and biases.
 
 If we think about what this neuron is actually *doing*, it is forming a mapping between an input and an output. We store this mapping naively as a very large vector of weights. When we want to see what the weight is, we just look up its index within that big vector. But imagine if you were a young coding student, and you were given the task to write a function that maps some input to some expected output. For instance, mapping an input to it's square. Would you really implement your function like:
@@ -155,7 +153,11 @@ Amazing stuff! We can see that the function we've evolved fits the target line p
 
 One optimisation I thought might be useful is sharing good programs from previous iterations with the current iteration. Every time the trainer submits a good solution, it will add it to it's history. When it rolls back a generation (see: [#optimisationgenerationalbacktracking](Generational Backtracking)) it will try and mutate a previous good solution while it has previous solutions it hasn't tried. Right now, it will only keep the best 10 solutions for mutation as this cuts into our generations. This works great for reducing our error, but importantly will only apply when we know that the data we're fitting all follows some roughly similar pattern.
 
-Even so, this took a *long* time - the CPU version took almost 24 hours to fill out the full set.
+Even so, this took a *long* time - the CPU version took almost 31 hours to fill out the full set! And even after that, we had a lot of failure cases. However, I'm pretty sure all of these failure cases would have eventually folded to computation and in general I think the premise holds promise. I slightly changed the colouring on this one so you could see the detail a bit more - the red channel is our error, the green channel is our generations, so yellow pixels are our failure cases:
+
+![A final plot of our graph.](https://lrtw.net/blog/img/functiongen/output_final.png)
+
+In general, I think this is a promising route. Can we create an array of these objects and train them to cooperate? Let's find out next time!
 
 # GPU vs. CPU
 
