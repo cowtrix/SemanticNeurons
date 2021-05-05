@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SemanticNeurons
 {
-	public class ByteProgram : IEnumerable<byte>
+	public class ByteProgram : IEnumerable<byte>, IFunctionObject<float, float>
 	{
 		public int Length => m_array.Length;
 		public byte[] GetBytes() => m_array;
