@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SemanticTensors
+namespace SemanticNeurons
 {
 	public static class Util
 	{
@@ -152,7 +152,6 @@ namespace SemanticTensors
 			}
 			Task.WaitAll(t);
 			bestError = minErrorThisGen;
-			//Console.WriteLine($"Generation {genNumber}:\t\tError:{bestError}");
 			return bestProgram;
 		}
 

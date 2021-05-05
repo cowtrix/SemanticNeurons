@@ -1,4 +1,4 @@
-﻿namespace SemanticTensors
+﻿namespace SemanticNeurons
 {
 	public enum InstructionSet : byte
 	{

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SemanticTensors
+namespace SemanticNeurons
 {
 	public class ByteProgramMutatorV1 : IByteProgramMutator
 	{

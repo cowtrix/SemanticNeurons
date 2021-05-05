@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace SemanticTensors
+namespace SemanticNeurons
 {
 	public class WeightedSet<T>
 	{
